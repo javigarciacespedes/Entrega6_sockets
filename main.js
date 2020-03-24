@@ -3,13 +3,22 @@ const user = require("./cmds_user.js");
 const quiz = require("./cmds_quiz.js");
 const favs = require("./cmds_favs.js");
 const readline = require('readline');
+const net = require('net');
+
+let server = net.createServer(function(socket){
+  
+  
+  socket.on('connect', function(){
+    console.log("Server at port: " + port + " of " + host);
+  });
+  
 
 const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
+  input: socket,
+  output: socket,
   prompt: "> "
 });
-rl.log = (msg) => console.log(msg);  // Add log to rl interface
+rl.log = (msg) => socket.write(msg);  // Add log to rl interface
 rl.questionP = function (string) {   // Add questionP to rl interface
   return new Promise ( (resolve) => {
     this.question(`  ${string}: `, (answer) => resolve(answer.trim()))
@@ -17,6 +26,7 @@ rl.questionP = function (string) {   // Add questionP to rl interface
 };
 
 rl.prompt();
+
 
 rl.on('line', async (line) => {
   try{
@@ -41,11 +51,14 @@ rl.on('line', async (line) => {
     else if (['cf', 'fc'].includes(cmd))      { await favs.create(rl);}
     else if (['df', 'fd'].includes(cmd))      { await favs.delete(rl);}
 
-    else if ('e'===cmd)  { rl.log('Bye!'); process.exit(0);}
+    else if ('e'===cmd)  { rl.log('Bye!'); rl.close(0);}
     else                 {  rl.log('UNSUPPORTED COMMAND!');
                             user.help(rl);
                          };
     } catch (err) { rl.log(`  ${err}`);}
     finally       { rl.prompt(); }
   });
+});
+
+server.listen(8080);
 
